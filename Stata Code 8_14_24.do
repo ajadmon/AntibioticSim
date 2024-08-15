@@ -209,20 +209,8 @@
 *We'll export the graph as a jpeg
 graph export AttributableDeaths.jpg , as(jpg) replace
 
-*Finally, we generate some summary data (e.g., frequency of antianaerobic antibiotics at baseline) and both unadjusted and adjusted treatment effect data for inclusion in the manuscript. We don't really use this data in the sim but report it for completeness.
+*Finally, we generate some summary data for inclusion in the manuscript.
 	*Paper Text
 	use slimmed_data_for_sim.dta , replace
 	sum ninety_day_outcome
 	tab zosyn_encoded
-	teffects ipw (ninety_day_outcome) (zosyn_encoded c.age i.sex_encoded_2 i.infection_encoded_2 i.infection_encoded_3 i.infection_encoded_4 i.infection_encoded_5 c.sofa c.time_to_rx c.charlson_score i.race_cat_collapsed_2 i.race_cat_collapsed_3 i.race_cat_collapsed_4)
-
-	teffects ipw (ninety_day_outcome) (zosyn_encoded c.age i.sex_encoded_2 i.infection_encoded_2 i.infection_encoded_3 i.infection_encoded_4 i.infection_encoded_5 c.sofa c.time_to_rx c.charlson_score i.race_cat_collapsed_2 i.race_cat_collapsed_3 i.race_cat_collapsed_4)
-
-	logistic ninety_day_outcome i.zosyn_encoded
-	logistic ninety_day_outcome i.zosyn_encoded c.age i.sex_encoded_2 i.infection_encoded_2 i.infection_encoded_3 i.infection_encoded_4 i.infection_encoded_5 c.sofa c.time_to_rx c.charlson_score i.race_cat_collapsed_2 i.race_cat_collapsed_3 i.race_cat_collapsed_4
-	margins i.zosyn_encoded
-		predict prediction_astreated // predictions with "actual" treatment status
-		replace zosyn_encoded = 0 // predictions if untreated
-		predict prediction_unexposed // predictions if noone is treated
-		generate te_ifnotreated = prediction_astreated - prediction_unexposed // calculating ATT
-		total te_ifnotreated
