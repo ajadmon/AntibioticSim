@@ -141,13 +141,13 @@
 
 
 
-/* Simulate across all of the settings, and collect results in a table. We'll "set" the effect of anti-anaerobic antibipotics on mortality to a range from OR 1.0 to OR 1.5 in steps of 0.05. We'll conduct 1000 repetitions under each setting and report means and bootstrapped confidence intervals*/
+/* Simulate across all of the settings, and collect results in a table. We'll "set" the effect of anti-anaerobic antibipotics on mortality to a range from OR 0.9755 to OR 1.3275 in equal steps (these correspond to the range of risk differences observed in published human studies, converted using the prevalence of mortality in this study population and the standard formula). We'll conduct 1000 repetitions under each setting and report means and bootstrapped confidence intervals*/
 	collect clear
 	collect create tables2 , replace
 	quietly {
 		*First, the base model with the same level of anti-anaerobic prescribing as in the study population*
 	
-		foreach oddsratiosetting of numlist 0.975(0.025)1.4 {
+		foreach oddsratiosetting of numlist 0.9755 1.015 1.054 1.093 1.132 1.171 1.210 1.249 1.289 1.3275 {
 			simulate excessdeaths = r(excessdeaths) , reps(1000) : simstudy, oddsratio(`oddsratiosetting')
 			bootstrap mean=r(mean) , reps(1000) : summarize excessdeaths
 			generate mean = r(table)[1,1]
@@ -160,7 +160,7 @@
 	collect layout (cmdset) (result[scenario] result[teffect] result[ci_lb] result[ci_ub] ) (), name(tables2)
 
 	*Second, assuming 20% greater anti-anaerobic prescribing as in the study population*
-		foreach oddsratiosetting of numlist 0.975(0.025)1.4 {
+		foreach oddsratiosetting of numlist 0.9755 1.015 1.054 1.093 1.132 1.171 1.210 1.249 1.289 1.3275 {
 			simulate excessdeaths = r(excessdeaths) , reps(1000) : simstudy_increased, oddsratio(`oddsratiosetting')
 			bootstrap mean=r(mean) , reps(1000) : summarize excessdeaths
 			generate mean = r(table)[1,1]
@@ -173,7 +173,7 @@
 	collect layout (cmdset) (result[scenario] result[teffect] result[ci_lb] result[ci_ub] ) (), name(tables2)
 
 	*Second, assuming 20% less anti-anaerobic prescribing as in the study population*
-		foreach oddsratiosetting of numlist 0.975(0.025)1.4 {
+		foreach oddsratiosetting of numlist 0.9755 1.015 1.054 1.093 1.132 1.171 1.210 1.249 1.289 1.3275 {
 			simulate excessdeaths = r(excessdeaths) , reps(1000) : simstudy_decreased, oddsratio(`oddsratiosetting')
 			bootstrap mean=r(mean) , reps(1000) : summarize excessdeaths
 			generate mean = r(table)[1,1]
@@ -184,7 +184,7 @@
 			}
 			
 	collect layout (cmdset) (result[scenario] result[oddsratiovalue] result[teffect] result[ci_lb] result[ci_ub] ) (), name(tables2)
-
+	}
 
 *We'll save the simulation results in a table for later viewing/reporting
 	collect export simoutputdata.xlsx , name(tables2) replace
@@ -201,11 +201,10 @@
 	(rarea ci_lb ci_ub ARI if scenario == 2, fcolor(red%50) lcolor(red%50)) ///
 	(line teffect ARI if scenario == 3, lcolor(green) lpattern(solid)) ///
 	(rarea ci_lb ci_ub ARI if scenario == 3, fcolor(green%50) lcolor(green%50)) ///
-	, ytitle("Excess Deaths per Year") xtitle("Treatment Effect" "(Absolute Risk Increase)") ///
-	xlabel(-0.005(0.01)0.06, labsize(small)) ylabel(0(5000)40000, labsize(small)) ///
+	, ytitle("Excess Deaths per Year") xtitle("Treatment Effect" "(Absolute Risk Difference, %)") ///
+	xlabel(-0.005 "-0.5" 0.00 "0" 0.005 "0.5" 0.01 "1" 0.015 "1.5" 0.02 "2" 0.025 "2.5" 0.03 "3" 0.035 "3.5" 0.04 "4" 0.045 "4.5" 0.05 "5" , labsize(small)) ylabel(0(5000)40000, labsize(small)) ///
 	legend(order(1 "Study population" "antibiotic practices" "" 3 "Anti-anaerobic antibiotics" "used 20% more often" 5 "Anti-anerobic antibiotics" "used 20% less often")) name("AttributableDeaths", replace) ///
 	xline(0.03368, lpattern(dash) lcolor(black)) xline(0.039, lpattern(dash) lcolor(black)) xline(0.05, lpattern(dash) lcolor(black))
-
 
 *We'll export the graph as a jpeg
 graph export AttributableDeaths.jpg , as(jpg) replace
@@ -227,14 +226,3 @@ graph export AttributableDeaths.jpg , as(jpg) replace
 		predict prediction_unexposed // predictions if noone is treated
 		generate te_ifnotreated = prediction_astreated - prediction_unexposed // calculating ATT
 		total te_ifnotreated
-
-
-
-
-
-
-
-
-
-
-
