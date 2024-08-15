@@ -77,7 +77,7 @@
 	program simstudy , rclass
 		syntax,  [ oddsratio(real 1.14962) ] // inputs and default values
 
-		/*quietly { */
+		quietly { 
 			drop _all // getting rid of old data for each sim
 			use slimmed_data_for_sim.dta , replace // extra variables eliminated
 			bsample 7569
@@ -91,7 +91,7 @@
 		
 		generate te_ifnotreated = prediction_astreated - prediction_unexposed // calculating ATT
 		svy : total te_ifnotreated // this gives me the lives saved if all treated were untreated
-	/* } */
+	}
 		return scalar excessdeaths = r(table)[1,1] /*returning the number of lives saved and storing it as excessdeaths*/
 	end
 
@@ -99,7 +99,7 @@
 	program simstudy_increased , rclass
 		syntax,  [ oddsratio(real 1.14962) ] // inputs and default values
 
-		/*quietly { */
+		{
 			drop _all // getting rid of old data for each sim
 			use slimmed_data_for_sim.dta , replace // extra variables eliminated
 			bsample 7569
@@ -113,7 +113,7 @@
 		
 		generate te_ifnotreated = prediction_astreated - prediction_unexposed // calculating ATT
 		svy : total te_ifnotreated // this gives me the lives saved if all treated were untreated
-	/* } */
+	}
 		return scalar excessdeaths = r(table)[1,1] /*returning the number of lives saved and storing it as excessdeaths*/
 	end
 
@@ -121,7 +121,7 @@
 	program simstudy_decreased , rclass
 		syntax,  [ oddsratio(real 1.14962) ] // inputs and default values
 
-		/*quietly { */
+		quietly {
 			drop _all // getting rid of old data for each sim
 			use slimmed_data_for_sim.dta , replace // extra variables eliminated
 			bsample 7569
@@ -135,18 +135,19 @@
 		
 		generate te_ifnotreated = prediction_astreated - prediction_unexposed // calculating ATT
 		svy : total te_ifnotreated // this gives me the lives saved if all treated were untreated
-	/* } */
+	}
 		return scalar excessdeaths = r(table)[1,1] /*returning the number of lives saved and storing it as excessdeaths*/
 	end
 
 
 
-/* quietly simulate across all of the settings, and collect results in a table. We'll "set" the effect of anti-anaerobic antibipotics on mortality to a range from OR 1.0 to OR 1.5 in steps of 0.05. We'll conduct 1000 repetitions under each setting and report means and bootstrapped confidence intervals*/
+/* Simulate across all of the settings, and collect results in a table. We'll "set" the effect of anti-anaerobic antibipotics on mortality to a range from OR 1.0 to OR 1.5 in steps of 0.05. We'll conduct 1000 repetitions under each setting and report means and bootstrapped confidence intervals*/
 	collect clear
 	collect create tables2 , replace
-
-	*First, the base model with the same level of anti-anaerobic prescribing as in the study population*
-		foreach oddsratiosetting of numlist 0.975(0.025)1.5 {
+	quietly {
+		*First, the base model with the same level of anti-anaerobic prescribing as in the study population*
+	
+		foreach oddsratiosetting of numlist 0.975(0.025)1.4 {
 			simulate excessdeaths = r(excessdeaths) , reps(1000) : simstudy, oddsratio(`oddsratiosetting')
 			bootstrap mean=r(mean) , reps(1000) : summarize excessdeaths
 			generate mean = r(table)[1,1]
@@ -159,7 +160,7 @@
 	collect layout (cmdset) (result[scenario] result[teffect] result[ci_lb] result[ci_ub] ) (), name(tables2)
 
 	*Second, assuming 20% greater anti-anaerobic prescribing as in the study population*
-		foreach oddsratiosetting of numlist 0.975(0.025)1.5 {
+		foreach oddsratiosetting of numlist 0.975(0.025)1.4 {
 			simulate excessdeaths = r(excessdeaths) , reps(1000) : simstudy_increased, oddsratio(`oddsratiosetting')
 			bootstrap mean=r(mean) , reps(1000) : summarize excessdeaths
 			generate mean = r(table)[1,1]
@@ -172,7 +173,7 @@
 	collect layout (cmdset) (result[scenario] result[teffect] result[ci_lb] result[ci_ub] ) (), name(tables2)
 
 	*Second, assuming 20% less anti-anaerobic prescribing as in the study population*
-		foreach oddsratiosetting of numlist 0.975(0.025)1.5 {
+		foreach oddsratiosetting of numlist 0.975(0.025)1.4 {
 			simulate excessdeaths = r(excessdeaths) , reps(1000) : simstudy_decreased, oddsratio(`oddsratiosetting')
 			bootstrap mean=r(mean) , reps(1000) : summarize excessdeaths
 			generate mean = r(table)[1,1]
@@ -183,7 +184,7 @@
 			}
 			
 	collect layout (cmdset) (result[scenario] result[oddsratiovalue] result[teffect] result[ci_lb] result[ci_ub] ) (), name(tables2)
-
+	}
 
 *We'll save the simulation results in a table for later viewing/reporting
 	collect export simoutputdata.xlsx , name(tables2) replace
@@ -201,7 +202,7 @@
 	(line teffect ARI if scenario == 3, lcolor(green) lpattern(solid)) ///
 	(rarea ci_lb ci_ub ARI if scenario == 3, fcolor(green%50) lcolor(green%50)) ///
 	, ytitle("Excess Deaths per Year") xtitle("Treatment Effect" "(Absolute Risk Increase)") ///
-	xlabel(-0.005(0.01)0.07, labsize(small)) ylabel(0(5000)40000, labsize(small)) ///
+	xlabel(-0.005(0.01)0.06, labsize(small)) ylabel(0(5000)40000, labsize(small)) ///
 	legend(order(1 "Study population" "antibiotic practices" "" 3 "Anti-anaerobic antibiotics" "used 20% more often" 5 "Anti-anerobic antibiotics" "used 20% less often")) name("AttributableDeaths", replace) ///
 	xline(0.03368, lpattern(dash) lcolor(black)) xline(0.039, lpattern(dash) lcolor(black)) xline(0.05, lpattern(dash) lcolor(black))
 
